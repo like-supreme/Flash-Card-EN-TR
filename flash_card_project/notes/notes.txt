@@ -1,0 +1,107 @@
+on right fonksiyonunu yapmak çok zordu 
+sebebini bilmiyorum
+on_right() ne yapıyor? (satır satır)
+def on_right():
+    global flip_timer
+    if flip_timer:
+        window.after_cancel(flip_timer)
+
+
+Neden? Önceden ayarlanmış bir flip sayacı (3 sn sonra Türkçe’ye çeviren) varsa iptal ediyoruz. Kullanıcı butona basınca “birazdan flip olacak” gibi eski planlar çalışmasın.
+
+    try:
+        words.remove(random_word)
+
+
+words → elindeki kart havuzu (list of dicts).
+
+random_word → şu an ekranda gösterilen kart (dict).
+
+remove() tam olarak o dict referansını listeden atar. Böylece “öğrendim” dediğin kart bir daha gelmez.
+
+    except ValueError:
+        canvas.itemconfig(word_text , text="There is an error. ")
+        canvas.itemconfig(lang_text , text="Oops")
+        on_right()
+
+
+Eğer random_word liste içinde bulunamazsa (normalde olmaz ama güvenlik için), ValueError yakalanır.
+
+Burada recursive çağrı yapmışsın. Bunu çok önermem; hata varsa sonsuza kadar tekrar çağırabilir. En temiz hâliyle, burada sadece kısa bir mesaj gösterip return etmek daha iyi.
+
+    pd.DataFrame(words).to_csv(
+        "C:/Users/.../learnedwords.csv",
+        index=False,
+        encoding="utf-8"
+    )
+
+
+Kalan kart havuzunu CSV’ye tamamen yeniden yazıyorsun.
+
+İpucu: Dosya ismi “learnedwords.csv” sanki “öğrenilenler” gibi duyuluyor; ama içine kalanlar gidiyor. Step 4 mantığına birebir uyması için dosya adını words_to_learn.csv yapman daha anlaşılır olur (gelecek açılışta bu dosyadan devam edeceksin ya).
+
+    if words:
+        next_card()
+    else:
+        canvas.itemconfig(lang_text , text= "Well Done" , fill="black")
+        canvas.itemconfig(word_text , text="You Learned All")
+
+
+Havuz boşaldıysa “bitti” mesajı göster.
+
+Hâlâ kart varsa next_card() ile sıradaki karta geç.
+
+random_word neden global?
+
+Amacımız:
+
+next_card() fonksiyonunda rastgele bir kart seçiyoruz.
+
+Sonra bu kartın Türkçesini 3 saniye sonra flip_card() içinde göstereceğiz.
+
+Eğer random_word lokal olsaydı:
+
+next_card() bittiğinde o değişken scope dışına çıkardı.
+
+flip_card() çağrıldığında artık o seçilen kelimeye erişemezdin → hata olurdu.
+
+Bu yüzden random_word’u global state gibi tuttuk ki:
+
+next_card() seçiyor → random_word içine atıyor.
+
+flip_card() da onu kullanabiliyor.
+
+2. flip_timer neden global?
+
+Amacımız:
+
+window.after(2500, flip_card) ile bir “geri sayım” başlatıyoruz.
+
+Ama kullanıcı butona basarsa (✅ / ❌), önceki timer hâlâ çalışıyor olabilir.
+
+O durumda, mesela yeni kart açılmışken eski flip çalışırsa ekran bozulur.
+
+Bunun önüne geçmek için:
+
+if flip_timer:
+    window.after_cancel(flip_timer)
+
+
+diyebilmek lazım.
+
+Yani flip_timer’ı da global tutuyoruz ki:
+
+next_card() içinde yeni timer atayalım,
+
+on_right() veya on_wrong() içinde iptal edelim.
+
+3. Genel Mantık
+
+Bunlar aslında “UI state” gibi düşünülebilir.
+
+Hangi kart ekranda? → random_word
+
+Şu an aktif bir geri sayım var mı? → flip_timer
+
+Global yapmamızın nedeni: farklı fonksiyonlar arası paylaşmamız gerekmesi.
+Daha ileri seviye olsaydı (mesela class yapısı), bunları global yerine class attribute olarak tutardık (self.random_word, self.flip_timer). Ama mantık aynı.
